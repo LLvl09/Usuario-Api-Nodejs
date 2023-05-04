@@ -9,9 +9,9 @@ const jwt = require('jsonwebtoken');
 exports.post = async (req, res, next) => {
     let contract = new ValidationContract();
 
-    contract.hasMinLen(req.body.nome, 3, 'O nome deve conter pelo menos 6 caractéres!');
-    contract.hasMinLen(req.body.senha, 6, 'A senha deve conter pelo menos 6 caractéres!');
-    contract.isEmail(req.body.email, 'O seu email é inválido!');
+    contract.hasMinLen(req.body.nome, 3, 'The name must contain at least 6 characters!');
+    contract.hasMinLen(req.body.senha, 6, 'The password must contain at least 6 characters!');
+    contract.isEmail(req.body.email, 'Your email is invalid!');
 
     if (!contract.isValid()) {
         res.status(400).send(contract.errors()).end();
@@ -24,7 +24,7 @@ exports.post = async (req, res, next) => {
         // Verifica se o usuário já existe no banco de dados
         const existingUser = await User.findOne({ email: user.email });
         if (existingUser) {
-            return res.status(400).json({ error: 'Usuário já existe' });
+            return res.status(400).json({ error: 'User already exists' });
         }
 
         const salt = await bcrypt.genSalt(12);
