@@ -9,36 +9,33 @@ const jwt = require('jsonwebtoken');
 exports.post = async (req, res, next) => {
     let contract = new ValidationContract();
 
-    contract.hasMinLen(req.body.name, 3, 'The name must contain at least 3 characters');
-    contract.hasMinLen(req.body.password, 6, 'The password must contain at least 3 characters');
-    contract.isEmail(req.body.email, 'Your email is invalid');
+    contract.hasMinLen(req.body.nome, 3, 'O nome deve conter pelo menos 6 caractéres!');
+    contract.hasMinLen(req.body.senha, 6, 'A senha deve conter pelo menos 6 caractéres!');
+    contract.isEmail(req.body.email, 'O seu email é inválido!');
 
     if (!contract.isValid()) {
         res.status(400).send(contract.errors()).end();
         return;
     }
 
+    const user = new User(req.body);
+
     try {
-        const user = new User(req.body);
+        // Verifica se o usuário já existe no banco de dados
+        const existingUser = await User.findOne({ email: user.email });
+        if (existingUser) {
+            return res.status(400).json({ error: 'Usuário já existe' });
+        }
 
         const salt = await bcrypt.genSalt(12);
-        const passwordHash = await bcrypt.hash(user.password, salt);
-        user.password = passwordHash;
+        const hashedPassword = await bcrypt.hash(user.password, salt);
+        user.password = hashedPassword;
 
-        let exist = await User.findOne({ email: user.email })
+        await user.save();
 
-        if (exist === null) {
-            await user.save();
-            res.status(201).send({ message: 'Your email has been succefully registred' });
-        }
-        if (exist.email === user.email) {
-
-            res.status(400).send({ message: 'This email already exist' });
-        }
-
-
-    } catch (e) {
-        res.status(500).send({ message: 'Failed to register the user', data: e });
+        res.status(201).json({ message: 'Usuário criado com sucesso' });
+    } catch (error) {
+        res.status(500).json({ error: 'Erro ao criar usuário' });
     }
 }
 
