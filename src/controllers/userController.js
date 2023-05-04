@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 const User = mongoose.model('User');
 const ValidationContract = require('../validators/validationContract');
 const bcrypt = require('bcrypt');
-const LoginDto = require('../models/LoginDto');
 const config = require('../config/config');
 const jwt = require('jsonwebtoken');
 
@@ -52,25 +51,23 @@ exports.login = async (req, res, next) => {
     }
 
     try {
-        const userLogin = new LoginDto(req.body);
+       const { email, password } = req.body;
+       const user = await User.findOne({ email });
 
-        const userExist = await User.findOne({ email: userLogin.email });
-
-        if (userExist === null) {
-            res.status(404).send({ message: 'User not found' })
-
-        }
-        bcrypt.compare(userLogin.password, userExist.password, function (err, value) {
-            if (value) {
-                console.log(value);
-            } else {
-                res.status(400).send({ message: `Password don't match` });
-            }
-        });
+       if (!user) {
+           return res.status(400).json({message: 'User not found!'});
+       }   
+       bcrypt.compare(password, user.password, function (err, value) {
+           if (value) {
+               console.log(value);
+           } else {
+               res.status(400).send({ message: `Password don't match` });
+           }
+       });
 
         const secret = config.SECRET_TOKEN;
         const token = jwt.sign({
-            id: userExist.id
+            id: user.id
         },
             secret, {
             expiresIn: 3600
